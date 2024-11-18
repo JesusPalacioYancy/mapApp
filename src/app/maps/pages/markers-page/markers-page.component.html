@@ -2,8 +2,13 @@
 
 
 <ul class="list-group">
-    <li class="list-group-item">
-        Marker 1
+    <li class="list-group-item"
+    *ngFor="let colorMarker of markers; let i =  index"
+    [ngStyle]="{backgroundColor : colorMarker.color }"
+    (dblclick)="delateMarker(i)"
+    (click)="flyTo(colorMarker.marker)"
+    >
+    Marca {{i + 1}}
     </li>
 </ul>
 
