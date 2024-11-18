@@ -1,11 +1,7 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { LngLat, Map, Marker } from 'mapbox-gl';
-
-
-interface MarkerAndColor {
-  color : string;
-  marker : Marker;
-};
+import { MarkerAndColor } from '../../interfaces/marker-color.interface';
+import { PlainMarker } from './../../interfaces/plain-marker.interface'
 
 
 @Component({
@@ -39,16 +35,7 @@ export class MarkersPageComponent {
       zoom: 15, // starting zoom
     });
 
-    // Ejemplo de marcador
-    // const markerHtml = document.createElement('div')
-    // markerHtml.innerHTML = 'JP'
-    
-    // const markers = new Marker({
-    //   color: 'red',
-    //   element: markerHtml
-    // })
-    //   .setLngLat(this.lngLat)
-    //   .addTo(this.map)
+    this.readFromLocalStorage();
   };
 
   // crear marca
@@ -58,7 +45,7 @@ export class MarkersPageComponent {
     const color = '#xxxxxx'.replace(/x/g, y=>(Math.random()*16|0).toString(16));
     const lgnLat = this.map.getCenter();
 
-    this.addMarker(lgnLat, color)
+    this.addMarker(lgnLat, color);
   };
 
 
@@ -68,30 +55,60 @@ export class MarkersPageComponent {
 
     const marker = new Marker({
       color: color,
-      draggable: true
+      draggable: true,
     })
       .setLngLat(lngLat)
       .addTo(this.map)
-      this.markers.push({
-        color,
-        marker
-      })
+      
+    this.markers.push({ color, marker });
+    this.saveToLocalStorage();
+
+    marker.on('dragend', () => this.saveToLocalStorage())
   };
 
   // Eliminar marcadores
   delateMarker(index: number): void {
     this.markers[index].marker.remove();
     this.markers.splice(index, 1);
+
+    this.saveToLocalStorage();
   };
 
 
+  // ir a la marca 
   flyTo(marker: Marker){
     this.map?.flyTo({
-      zoom: 14,
-      center: marker.getLngLat()
-    })
-  }
+      zoom: 15,
+      center: marker.getLngLat(),
+    });
+  };
 
+  // Guardar marcadores en localStorage
+  saveToLocalStorage() {
+    const plainMarkers: PlainMarker[]  = this.markers.map(({color, marker}) => {
+      return {
+        color,
+        lngLat: marker.getLngLat().toArray(),
+      };
+    });
+
+    localStorage.setItem('plainMarkers', JSON.stringify(plainMarkers));
+  };
+
+
+  // Leer marcadores del localStorage
+  readFromLocalStorage() {
+    const plainMakerString = localStorage.getItem('plainMarkers') ?? '[]';
+    const plainMarker: PlainMarker[] = JSON.parse(plainMakerString);
+
+    plainMarker.forEach(({color, lngLat}) => {
+      const [lng, lat] = lngLat;
+      const coords =  new LngLat(lng, lat);
+
+      this.addMarker(coords, color);
+    });
+
+  };
 
  
 };
